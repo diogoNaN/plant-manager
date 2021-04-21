@@ -6,14 +6,12 @@ import fonts from "../../styles/fonts";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
   },
 
   content: {
     flex: 1,
     alignItems: "center",
     justifyContent: "space-evenly",
-    backgroundColor: colors.white,
   },
 
   title: {
