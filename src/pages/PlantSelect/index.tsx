@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  SafeAreaView,
   Text,
-  View
+  View,
+  FlatList,
 } from 'react-native';
-import { FlatList } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/core';
 
 import { styles } from './styles';
+import colors from '../../styles/colors';
 
 import { api } from '../../services/api';
 
@@ -15,31 +16,21 @@ import { Load } from '../../components/Load';
 import { Header } from '../../components/Header';
 import { EnvironmentButton } from '../../components/EnvironmentButton';
 import { PlantCardPrimary } from '../../components/PlantCardPrimary';
-import colors from '../../styles/colors';
 
+import { PlantProps } from '../../libs/storage';
 interface EnvironmentData  {
   key: string;
   title: string;
 };
 
-interface PlantData  {
-  id: string;
-  name: string;
-  about: string;
-  water_tips: string;
-  photo: string;
-  environments: string[];
-  frequency: {
-    times: number;
-    repeat_every: string;
-  }
-};
 
 const PlantSelect = () => {
+  const { navigate } = useNavigation();
+
   const [loading, setLoading] = useState(true);
   const [environments, setEnvironments] = useState([] as EnvironmentData[]);
-  const [plants, setPlants] = useState([] as PlantData[]);
-  const [filteredPlants, setFilteredPlants] = useState([] as PlantData[]);
+  const [plants, setPlants] = useState([] as PlantProps[]);
+  const [filteredPlants, setFilteredPlants] = useState([] as PlantProps[]);
   const [environmentSelected, setEnvironmentSelected] = useState('all');
 
   const [page, setPage] = useState(1);
@@ -88,8 +79,6 @@ const PlantSelect = () => {
       return setLoadingMore(false);
     };
 
-    console.log(page)
-
     const { data } = await api.get('plants', {
       params: {
         _sort: 'name',
@@ -126,8 +115,12 @@ const PlantSelect = () => {
     getPlants();
   }, [page]);
 
-  const handleSelectEnvironment = useCallback((environment: string) => {
+  const handleEnvironmentSelect = useCallback((environment: string) => {
     setEnvironmentSelected(environment);
+  }, []);
+
+  const handlePlantSelect = useCallback((plant: PlantProps) => {
+    navigate('PlantSave', { plant });
   }, []);
 
   if(loading) return <Load />
@@ -155,11 +148,12 @@ const PlantSelect = () => {
 
           <FlatList
             data={environments}
+            keyExtractor={(item) => String(item.key)}
             renderItem={({ item }) => (
               <EnvironmentButton
                 title={item.title}
                 active={item.key === environmentSelected}
-                onPress={() => handleSelectEnvironment(item.key)}
+                onPress={() => handleEnvironmentSelect(item.key)}
               />
             )}
             horizontal
@@ -177,10 +171,13 @@ const PlantSelect = () => {
 
           <FlatList
             data={filteredPlants}
+            keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (
-              <PlantCardPrimary data={item} />
+              <PlantCardPrimary
+                data={item}
+                onPress={() => handlePlantSelect(item)}
+              />
             )}
-            keyExtractor={(item, index) => item.id }
             showsVerticalScrollIndicator={false}
             numColumns={ 2 }
             onEndReachedThreshold={ 0.1 }

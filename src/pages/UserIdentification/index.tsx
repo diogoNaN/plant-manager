@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
@@ -7,9 +7,11 @@ import {
   Text,
   TextInput,
   View,
-  Keyboard
+  Keyboard,
+  Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { styles } from './styles';
 
@@ -22,6 +24,20 @@ const UserIdentification = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [isFilled, setIsFilled] = useState(false);
   const [name, setName] = useState<string>();
+
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
+
+  const getCurrentUser = useCallback(async () => {
+    const data = await AsyncStorage.getItem("@plantManager:user");
+
+    if(data) {
+      setName(data);
+      setIsFilled(!!data);
+    }
+
+  }, []);
 
   const handleInputBlur = useCallback(() => {
     setIsFocused(false);
@@ -37,9 +53,24 @@ const UserIdentification = () => {
     setName(value);
   }, []);
 
-  const handleConfirm = useCallback(() => {
-    navigate('Confirmation');
-  }, []);
+  const handleConfirm = useCallback(async () => {
+    if(!name) {
+      return Alert.alert("Me diz como chamar você 😥");
+    }
+
+    try {
+      await AsyncStorage.setItem("@plantManager:user", name);
+      navigate('Confirmation', {
+        title: "Prontinho",
+        subtitle: "Agora vamos cuidar das suas plantinhas com muito carinho.",
+        buttonTitle: "Começar",
+        icon: "smile",
+        nextScreen: "PlantSelect",
+      });
+    } catch (err) {
+      Alert.alert("Não foi possível salvar o seu nome. 😥");
+    }
+  }, [name]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,6 +102,7 @@ const UserIdentification = () => {
                   (isFocused || isFilled) &&
                   styles.inputFocused
                 ]}
+                value={name}
                 placeholder="Digite seu nome"
                 onBlur={handleInputBlur}
                 onFocus={handleInputFocus}
